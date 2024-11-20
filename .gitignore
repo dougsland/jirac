@@ -1,0 +1,4 @@
+# Ignore egg-info directories
+*.egg-info
+
+dist/
