@@ -1,0 +1,78 @@
+#!/usr/bin/env python
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+import argparse
+import os
+import re
+from jirac import JiraC, autocorrect_issue_key
+
+
+def main():
+    # Parse command-line arguments
+    parser = argparse.ArgumentParser(description="Fetch and print Jira issue details.")  # noqa: E501
+    parser.add_argument('issue_key', help='The Jira issue key to fetch (e.g., VROOM-12345)')  # noqa: E501
+    args = parser.parse_args()
+
+    # Autocorrect the issue key format if necessary (from VROOM123 to VROOM-123)  # noqa: E501
+    corrected_issue_key = autocorrect_issue_key(args.issue_key)
+
+    # Fetch Jira connection details from environment variables
+    server = os.getenv("JIRA_SERVER_URL")
+    api_token = os.getenv("JIRA_API_TOKEN")
+    username = os.getenv("JIRA_USERNAME")  # Optional if using token-based auth
+
+    if not server or not api_token:
+        print("Please set the environment variables: JIRA_SERVER_URL, JIRA_API_TOKEN")  # noqa: E501
+        return
+
+    # Initialize Jira client
+    jira_client = JiraC(server, api_token, username)
+
+    # Set the current issue to work with
+    jira_client.current_issue = corrected_issue_key
+
+    # Print all available information about the current issue
+    if jira_client.current_issue:
+        issue = jira_client.current_issue
+        story_points = getattr(issue.fields, 'customfield_12310243', None)
+        epic_link = getattr(issue.fields, 'customfield_12311140', None)
+        sprint_data = getattr(issue.fields, 'customfield_12310940', None) or []
+        sprint_names = [re.search(r'name=([^,]+)', sprint).group(1) if isinstance(sprint, str) and re.search(r'name=([^,]+)', sprint) else 'Unnamed Sprint' for sprint in sprint_data] if isinstance(sprint_data, list) else ['No sprint data available']  # noqa: E501
+
+        print("-------------------------------------------------")
+        print(f"Summary: {issue.fields.summary}")
+        issue_url = f"{jira_client.server}/browse/{issue.key}"
+        print(f"{issue_url}")
+        print("-------------------------------------------------")
+        print(f"Status: {issue.fields.status.name}")
+        print(f"Assignee: {jira_client.assignee}")
+        print(f"Components: {', '.join(jira_client.components) if jira_client.components else 'None'}")  # noqa: E501
+        print(f"Resolution: {issue.fields.resolution.name if issue.fields.resolution else 'Unresolved'}")  # noqa: E501
+        print("-------------------------------------------------")
+        print(f"Epic Link: {epic_link}")
+        print(f"Story Points: {story_points}")
+        print(f"Sprint(s): {', '.join(sprint_names) if sprint_names else 'No sprints found'}")  # noqa: E501
+        print(f"Priority: {issue.fields.priority.name if issue.fields.priority else 'None'}")  # noqa: E501
+        print(f"Reporter: {issue.fields.reporter.displayName if issue.fields.reporter else 'None'}")  # noqa: E501
+        print(f"Labels: {', '.join(issue.fields.labels) if issue.fields.labels else 'None'}")  # noqa: E501
+        print(f"Created: {issue.fields.created}")
+        print(f"Updated: {issue.fields.updated}")
+        print("-------------------------------------------------")
+
+        print(f"Description:\n\n{issue.fields.description}")
+        print("-------------------------------------------------")
+
+
+if __name__ == "__main__":
+    main()

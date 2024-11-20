@@ -1,0 +1,76 @@
+#!/usr/bin/env python
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+import os
+import re
+import argparse
+from jirac import JiraC
+
+
+def main():
+    # Parse command-line arguments
+    parser = argparse.ArgumentParser(description="Fetch and display Jira issues with specified criteria.")  # noqa: E501
+    parser.add_argument('component', help='Component to search for in Jira issues (e.g., QMComponent)')  # noqa: E501
+    args = parser.parse_args()
+
+    # Fetch Jira connection details from environment variables
+    server = os.getenv("JIRA_SERVER_URL")
+    api_token = os.getenv("JIRA_API_TOKEN")
+    username = os.getenv("JIRA_USERNAME")  # Optional if using token-based auth
+
+    if not server or not api_token:
+        print("Please set the environment variables: JIRA_SERVER_URL, JIRA_API_TOKEN")  # noqa: E501
+        return
+
+    # Initialize Jira client
+    jira_client = JiraC(server, api_token, username)
+
+    # JQL query to find tickets where Assignee is None and Component matches the provided argument  # noqa: E501
+    jql_query = f'assignee = EMPTY AND component = "{args.component}"'
+
+    try:
+        # Search for issues matching the query
+        issues = jira_client.jira.search_issues(jql_query, maxResults=50)  # Adjust maxResults as needed  # noqa: E501
+        total_issues = len(issues)
+        if total_issues > 0:
+            print(f"Found {total_issues} issues matching the criteria:\n")
+            for issue in issues:
+                # Get component names
+                components = [component.name for component in issue.fields.components] if issue.fields.components else 'None'  # noqa: E501
+                story_points = getattr(issue.fields, 'customfield_12310243', None)  # noqa: E501
+                epic_link = getattr(issue.fields, 'customfield_12311140', None)
+                sprint_data = getattr(issue.fields, 'customfield_12310940', None) or []  # noqa: E501
+                sprint_names = [re.search(r'name=([^,]+)', sprint).group(1) if isinstance(sprint, str) and re.search(r'name=([^,]+)', sprint) else 'Unnamed Sprint' for sprint in sprint_data] if isinstance(sprint_data, list) else ['No sprint data available']  # noqa: E501
+
+                print(f"Issue Key: {issue.key}")
+                print(f"Summary: {issue.fields.summary}")
+                print("Assignee: None")
+                print(f"Description: {issue.fields.description or 'None'}")
+                print(f"Components: {', '.join(components) if components != 'None' else 'None'}")  # noqa: E501
+                print(f"Story Points: {story_points}")
+                print(f"Epic Link: {epic_link}")
+                print(f"Sprint(s): {', '.join(sprint_names) if sprint_names else 'No sprints found'}")  # noqa: E501
+                print("-" * 40)
+
+            print(f"\nTotal number of issues found: {total_issues}")
+            print(f"Query performed: querying for issues with '{args.component}' as a component and the assignee not set.")  # noqa: E501
+        else:
+            print("No issues found matching the criteria.")
+
+    except Exception as e:
+        print(f"Error fetching issues: {e}")
+
+
+if __name__ == "__main__":
+    main()
