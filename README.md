@@ -47,6 +47,7 @@ To use `jirac`, you need to configure the following environment variables. These
 export JIRA_SERVER_URL="https://issues.domain.com"
 export JIRA_API_TOKEN="your_token"
 export JIRA_USERNAME="your_kerberos_username@domain.com"  # Optional if using token-based authentication
+export JIRA_PROJECT="PROJECT_NAME" # Example: "VROOM"
 ```
 
 ### Reload the Shell Configuration
