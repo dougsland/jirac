@@ -12,17 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+
 import os
 import re
 import argparse
 from jirac import JiraC  # Assuming JiraC is in jirac.py
 
-
 def main():
     print("Processing...", end="", flush=True)
     # Parse command-line arguments
-    parser = argparse.ArgumentParser(description="Fetch and display Jira issues with specified criteria.")  # noqa: E501
+    parser = argparse.ArgumentParser(description="Fetch and display Jira issues with specified criteria and optionally assign issues.")  # noqa: E501
     parser.add_argument('keyword', help='Keyword to search for in the summary or description (e.g., QM)')  # noqa: E501
+    parser.add_argument('--set-assignee', help='Optional assignee username to set on found issues')  # noqa: E501
     args = parser.parse_args()
 
     # Fetch Jira connection details from environment variables
@@ -63,6 +64,14 @@ def main():
                 print(f"Epic Link: {epic_link if epic_link is not None else 'None'}")  # noqa: E501
                 print(f"Sprint(s): {', '.join(sprint_names) if sprint_names else 'No sprints found'}")  # noqa: E501
                 print("-" * 40)
+
+                # If --set-assignee is provided, assign the issue
+                if args.set_assignee:
+                    try:
+                        jira_client.jira.assign_issue(issue, args.set_assignee)
+                        print(f"Issue {issue.key} has been assigned to {args.set_assignee}.")
+                    except Exception as assign_error:
+                        print(f"Failed to assign issue {issue.key} to {args.set_assignee}: {assign_error}")
 
             print(f"\nTotal number of issues found: {total_issues}")
             print(f"Query performed: querying for issues with '{args.keyword}' as a keyword in the summary or description and the assignee not set.")  # noqa: E501
