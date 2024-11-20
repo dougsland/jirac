@@ -1,0 +1,87 @@
+#!/usr/bin/env python
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+import os
+import argparse
+from jirac import JiraC
+
+def main():
+    # Parse command-line arguments
+    parser = argparse.ArgumentParser(description="List Jira issues with no components or set a specified component for Jira tickets.")  # noqa: E501
+    parser.add_argument('--set-component', help='Name of the Component to set on the specified issues')  # noqa: E501
+    parser.add_argument('--ticket', help='Comma-separated list of Jira tickets (e.g., VROOM-123,VROOM-124)')  # noqa: E501
+    args = parser.parse_args()
+
+    # Fetch Jira connection details from environment variables
+    server = os.getenv("JIRA_SERVER_URL")
+    api_token = os.getenv("JIRA_API_TOKEN")
+    username = os.getenv("JIRA_USERNAME")  # Optional if using token-based auth
+
+    if not server or not api_token:
+        print("Please set the environment variables: JIRA_SERVER_URL, JIRA_API_TOKEN")  # noqa: E501
+        return
+
+    # Initialize Jira client
+    jira_client = JiraC(server, api_token, username)
+
+    # Handle setting component if specified
+    if args.set_component and args.ticket:
+        tickets = [ticket.strip() for ticket in args.ticket.split(',')]
+        for ticket in tickets:
+            try:
+                issue = jira_client.jira.issue(ticket)
+                
+                # Check if the component exists in the project
+                project = issue.fields.project.key
+                components = jira_client.jira.project_components(project)
+                component_to_set = None
+                for comp in components:
+                    if comp.name == args.set_component:
+                        component_to_set = {"name": comp.name}
+                        break
+                
+                if not component_to_set:
+                    print(f"Component '{args.set_component}' not found in project {project}.")
+                    continue
+                
+                # Update the issue with the new component
+                issue.update(fields={"components": [component_to_set]})
+                print(f"Component for issue {ticket} has been set to '{args.set_component}'.")
+            except Exception as update_error:
+                print(f"Failed to set Component for issue {ticket}: {update_error}")
+        return
+
+    # Default behavior: List issues with no components set
+    jql_query = 'component = EMPTY'
+    try:
+        issues = jira_client.jira.search_issues(jql_query, maxResults=50)  # Adjust maxResults as needed  # noqa: E501
+        total_issues = len(issues)
+        if total_issues > 0:
+            print(f"Found {total_issues} issues with no components set:\n")
+            for issue in issues:
+                print(f"Issue Key: {issue.key}")
+                print(f"Summary: {issue.fields.summary}")
+                print(f"Assignee: {issue.fields.assignee.displayName if issue.fields.assignee else 'None'}")  # noqa: E501
+                print(f"Description: {issue.fields.description or 'None'}")
+                print("-" * 40)
+            print(f"\nTotal number of issues found: {total_issues}")
+        else:
+            print("No issues found with no components set.")
+
+    except Exception as e:
+        print(f"Error fetching issues: {e}")
+
+if __name__ == "__main__":
+    main()

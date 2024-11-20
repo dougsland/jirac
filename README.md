@@ -127,6 +127,11 @@ Issue VROOM-12345 has been assigned to Douglas Landgraf.
 Total: 8
 ```
 
+```bash
+./show-issues-story-points-not-set-using-component --set-story-points 5 --ticket VROOM-22868
+Story Points for issue VROOM-22868 has been set to 5.
+```
+
 Example code [show-issue-info](./examples/show-issue-info)
 ```python
 import argparse
