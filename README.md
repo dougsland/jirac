@@ -109,17 +109,17 @@ For an isolated environment to avoid potential conflicts:
 
 ## Usage
 
-After setting up your environment variables and installing `jirac`, you can go to [examples dir](./examples) or use the following example:
+After setting up your environment variables and installing `jirac`, you can go to [examples dir](./examples) as showed below or create your own scripts:
 
 Showing issues with assignee **NOT SET** in the components **BLUECHI** and  **QM**
 ```bash
-show-issues-assignee-as-none-using-component bluechi
-show-issues-assignee-as-none-using-component qm
+./show-issues-assignee-as-none-using-component bluechi
+./show-issues-assignee-as-none-using-component qm
 ```
 
 Setting issues with assignee **NOT SET** in the component **QM** as **Douglas Landgraf**
 ```bash
-show-issues-assignee-as-none-using-component qm --set-assignee "Douglas Landgraf"
+./show-issues-assignee-as-none-using-component qm --set-assignee "Douglas Landgraf"
 <SNIP>
 Issue VROOM-12345 has been assigned to Douglas Landgraf.
 
