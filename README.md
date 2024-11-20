@@ -110,6 +110,23 @@ For an isolated environment to avoid potential conflicts:
 
 After setting up your environment variables and installing `jirac`, you can go to [examples dir](./examples) or use the following example:
 
+Showing issues with assignee **NOT SET** in the component **QM**
+```bash
+show-issues-assignee-as-none-using-component qm
+
+Total: 8
+```
+
+Setting issues with assignee **NOT SET** in the component **QM** as **Douglas Landgraf**
+```bash
+show-issues-assignee-as-none-using-component qm --set-assignee "Douglas Landgraf"
+<SNIP>
+Issue VROOM-12345 has been assigned to Douglas Landgraf.
+
+Total: 8
+```
+
+Example code [show-issue-info](./examples/show-issue-info)
 ```python
 import argparse
 import os
