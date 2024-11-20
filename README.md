@@ -111,11 +111,10 @@ For an isolated environment to avoid potential conflicts:
 
 After setting up your environment variables and installing `jirac`, you can go to [examples dir](./examples) or use the following example:
 
-Showing issues with assignee **NOT SET** in the component **QM**
+Showing issues with assignee **NOT SET** in the components **BLUECHI** and  **QM**
 ```bash
+show-issues-assignee-as-none-using-component bluechi
 show-issues-assignee-as-none-using-component qm
-
-Total: 8
 ```
 
 Setting issues with assignee **NOT SET** in the component **QM** as **Douglas Landgraf**
